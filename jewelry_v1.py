@@ -31,11 +31,13 @@ if uploaded_file:
             total_attempts = 0
             total_destroyed = 0
             total_results = defaultdict(int)
+            full_log = []
 
-            for _ in range(repeat_count):
+            for repeat in range(repeat_count):
                 accessories = [0] * initial_count
                 attempts = 0
                 destroyed = 0
+                attempt_log = []
 
                 while len(accessories) > min_remaining:
                     accessories.sort()
@@ -45,17 +47,25 @@ if uploaded_file:
 
                     if roll < prob['success']:
                         accessories[0] += 1
+                        result = f"강화 성공 → +{accessories[0]}"
                     elif roll < prob['success'] + prob['destroy']:
                         accessories.pop(0)
                         destroyed += 1
+                        result = "장신구 파괴"
+                    else:
+                        result = f"강화 실패 → +{target} 유지"
 
                     attempts += 1
+                    if repeat_count == 1:
+                        attempt_log.append(f"[{attempts}] +{target} 시도 → {result} (남은 {len(accessories)}개)")
 
                 result_counter = Counter(accessories)
                 for k, v in result_counter.items():
                     total_results[k] += v
                 total_attempts += attempts
                 total_destroyed += destroyed
+                if repeat_count == 1:
+                    full_log = attempt_log
 
             avg_attempts = total_attempts / repeat_count
             avg_destroyed = total_destroyed / repeat_count
@@ -69,5 +79,9 @@ if uploaded_file:
             st.write("📦 평균 강화 결과:")
             st.write(avg_results)
             st.write(f"💰 평균 비용: {total_cost:,}원")
+
+            if repeat_count == 1:
+                with st.expander("📜 로그 보기"):
+                    st.text("\n".join(full_log))
 else:
     st.info("엑셀 파일을 업로드해주세요. 컬럼은 '강화 단계', '확률', '파괴확률'이어야 합니다.")
